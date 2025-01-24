@@ -23,27 +23,19 @@ INSERT INTO logging_por_plataforma (fecha, plataforma, id_usuario) VALUES
 ('2024-01-03', 'Mobile', '001'),;
 
 -- Consulta con GROUPING SETS para contar usuarios por fecha y plataforma
-WITH conteo_usuarios AS (
-    SELECT 
-        COALESCE(fecha::text, 'Total') AS fecha,
-        COALESCE(plataforma, 'Total') AS plataforma,
-        GROUPING(fecha, plataforma) AS id_grupo,
-        COUNT(DISTINCT id_usuario) AS numero_usuarios
-    FROM logging_por_plataforma
-    GROUP BY GROUPING SETS (
-        (fecha, plataforma),
-        (plataforma),
-        () -- Para el total
-    )
-)
-SELECT
-    fecha,
-    plataforma,
-    CASE
-        WHEN id_grupo = 0 THEN 'fecha__plataforma'
-        WHEN id_grupo = 2 THEN 'plataforma'
-        WHEN id_grupo = 3 THEN 'total'
+SELECT 
+    COALESCE(fecha::text, 'Total') AS fecha,
+    COALESCE(plataforma, 'Total') AS plataforma,
+    CASE WHEN
+        GROUPING(fecha, plataforma) = 0 THEN 'fecha__plataforma'
+        WHEN GROUPING(fecha, plataforma) = 2 THEN 'plataforma'
+        ELSE 'total'
     END AS nivel_agregacion,
-    numero_usuarios
-FROM conteo_usuarios
+    COUNT(DISTINCT id_usuario) AS numero_usuarios
+FROM logging_por_plataforma
+GROUP BY GROUPING SETS (
+    (fecha, plataforma),
+    (plataforma),
+    () -- Para el total
+)
 ORDER BY 1, 2;
